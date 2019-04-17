@@ -76,8 +76,7 @@ public class StatsdNotifier implements BuildNotifier {
      * @param buildState the reported state
      */
     public void notifyBuildState(String jobName, String nodeName, BuildState buildState) {
-        String fqp = String.format("%s.stage.%s.status.%s", getBranchPath(), nodeName, buildState);  
-        client.increment(fqp, 1);
+        notifyBuildStageStatus(jobName, nodeName, buildState, 0);
     }
 
     /**
@@ -87,8 +86,16 @@ public class StatsdNotifier implements BuildNotifier {
      * @param nodeName the stage of the status on which to report on
      */
     public void notifyBuildStageStatus(String jobName, String nodeName, BuildState buildState, long nodeDuration) {
-        String fqp = String.format("%s.stage.%s.duration", getBranchPath(), nodeName);
-        client.time(fqp, nodeDuration);
+        if (buildState == BuildState.Pending) {
+            return;
+        }
+        String result = buildState.toString();
+
+        String stageStatus = String.format("%s.stage.%s.status.%s", getBranchPath(), nodeName, result);
+        client.increment(stageStatus, 1);
+
+        String stageDuration = String.format("%s.stage.%s.duration", getBranchPath(), nodeName);
+        client.time(stageDuration, nodeDuration);
     }
 
     /**
